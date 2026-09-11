@@ -1,0 +1,77 @@
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist
+from std_msgs.msg import String
+import curses
+
+
+class Controller (Node):
+    def __init__(self):
+        super().__init__('controller')
+
+        self.direction_publisher = self.create_publisher(Twist, '/cmd_vel' , 10)
+        # self.detection_subscriber = self.create_subscription(String,'/green_flag', self.GreenFlag_callback, 10 )
+        self.msg = Twist() 
+
+    # def GreenFlag_callback(self,msg):
+    #     if msg == 'GO':
+    #         self.ManualControl
+
+    
+    def ManualControl(self, stdscr):
+        curses.curs_set(0)  
+        stdscr.nodelay(True) 
+        stdscr.keypad(True)
+        
+        while True:
+            key = stdscr.getch()
+
+            if key == curses.KEY_UP:
+                stdscr.addstr(0, 0, "Up Arrow Pressed")
+                self.get_logger().info("Up Arrow Pressed")
+                self.msg.linear.x = 1.0
+                self.msg.angular.z = 0.0
+                self.direction_publisher.publish(self.msg)
+            elif key == curses.KEY_DOWN:
+                stdscr.addstr(1, 0, "Down Arrow Pressed")
+                self.get_logger().info("Down Arrow Pressed")
+                self.msg.linear.x = -1.0
+                self.msg.angular.z = 0.0
+                self.direction_publisher.publish(self.msg)
+            elif key == curses.KEY_LEFT:
+                stdscr.addstr(2, 0, "Left Arrow Pressed")
+                self.get_logger().info("Left Arrow Pressed")
+                self.msg.angular.z = 1.0
+                self.msg.linear.x = 0.0
+                self.direction_publisher.publish(self.msg)
+            elif key == curses.KEY_RIGHT:
+                stdscr.addstr(3, 0, "Right Arrow Pressed")
+                self.get_logger().info("Right Arrow Pressed")
+                self.msg.angular.z = -1.0
+                self.msg.linear.x = 0.0
+                self.direction_publisher.publish(self.msg)
+            elif key == ord('q'):
+                break
+            else :
+                self.msg.angular.z = 0.0
+                self.msg.linear.x = 0.0
+                self.direction_publisher.publish(self.msg)  
+                
+            stdscr.refresh()
+
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    controller = Controller()
+
+    try:
+        curses.wrapper(controller.ManualControl)
+    finally:
+        controller.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()                           
